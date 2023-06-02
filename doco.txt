@@ -1,0 +1,92 @@
+Create Spark Session
+
+
+Function: parse_address
+
+   address_part = Split address components By ','
+
+   IF lenght of address_part = 4
+      extract and index ("streetNumber", "streetName", "city", "country")
+     
+      CREATE dictionary ("parsed_address")
+         SET parsed_address['streetNumber'] value of "streetNumber "
+         SET parsed_address['streetName'] value of "streetName" 
+         SET parsed_address['city'] value of "city" 
+         SET parsed_address['country'] value of "country"
+    
+    # 
+   ELSE  #address format is not as expected   
+      CREATE a dictionary named parsed_address
+      SET parsed_address['streetNumber'] to an empty string ('')
+      SET parsed_address['streetName'] to an empty string ('')
+      SET parsed_address['city'] to an empty string ('')
+      SET parsed_address['country'] to an empty string ('')
+
+    RETURN parsed_address
+
+
+
+Define class ("CustomerAccount")
+   Define attributes for the class
+
+Create list FOR "CustomerAccount") objects
+
+
+
+define schema BY (StructField, column name, data type,nullable type) FOR all feilds
+   StructField("<column name>", <data type >, <nullable type>)
+
+
+
+df_accounts_data = READ csv file ("account_data.txt")
+
+df_customer_data = READ csv file ("customer_data.txt")
+
+Customer_Account_Output_Data = JOIN DataFrames ("account_data.txt" + "account_data.txt") JOIN column = "customerId"
+
+
+
+Customer_Account_Output_Data = GROUP BY "customerId", "forename", and "surname" columns
+   extract all("accountId") Display in column named ("accounts")
+   count all FROM("accountId") Display in column named("numberAccounts")
+   add all account balances FROM ("accountId") Display in column named ("totalBalance")
+   find average FROM ("balance") Display in column named ("averageBalance")
+
+
+DISPLAY ("Customer_Account_Output_Data")
+
+
+
+WRITE Customer_Account_Output_Data to Parquet file 
+READ Parquet file into DataFrame ("parquet_df")
+
+
+df_address_data  = READ csv file ("address_data.txt")
+
+address_joined_parquet_df = JOIN DataFrames ("parquet_df" + "df_address_data") JOIN column = "customerId"
+
+
+
+DISPLAY ("address_joined_parquet_df")
+
+
+FOR EACH row IN ("address_joined_parquet_df")
+   extract values FROM address_joined_parquet_df
+   
+   CALL function  ("parse_address(address)") to extract components inside ("address")
+
+   extract column values FROM address_joined_parquet_df
+   assign values to attributes of ("CustomerAccount")
+
+APPEND customer_account objects TO customerAccounts list
+
+
+Customer_Account_Output_Data = CREATE DataFrame FROM list("customerAccounts") objects 
+
+column_order = Define column order FOR ("Customer_Account_Output_Data")
+
+SELECT columns from Customer_Account_Output_Data IN the order specified by ("column_order")
+ASSIGN to ("Customer_Account_Output_Data")
+
+
+DISPLAY ("Customer_Account_Output_Data")
