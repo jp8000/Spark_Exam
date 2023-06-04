@@ -60,7 +60,7 @@ customerAccounts = []
 
 
 # Defining the structure and data types of a DataFrame, it specifies the column names, their data types. 
-# Null=True: ields can be left empty or have missing values  
+# Null=True: Fields can be left empty or have missing values  
 # The schrma will help making the code more type safe
 schema = StructType([
     StructField("customerId", StringType(), nullable=True),
@@ -80,37 +80,37 @@ schema = StructType([
 
 
 # Read account data from CSV - ACCOUNTS DATA
-df_accounts_data = spark.read.option("header", "true").option("inferSchema", "true") \
+df_accounts_data = spark.read.option("header", "true").option("inferSchema", "false") \
     .csv("Spark_Exam/data/account_data.txt") 
 
 # Read customer data from CSV - CUSTOMER DATA
-df_customer_data = spark.read.option("header", "true").option("inferSchema", "true") \
+df_customer_data = spark.read.option("header", "true").option("inferSchema", "false") \
     .csv("Spark_Exam/data/customer_data.txt") 
 
 # Performing a join operation.  (accounts_data / customer data)
 Customer_Account_Output_Data = df_accounts_data.join(df_customer_data, "customerId")
 
 # Add additional columns
-Customer_Account_Output_Data = Customer_Account_Output_Data.groupBy("customerId", "forename", "surname").agg(
+# GroupBy: "customerId", "forename", "surname" as we need these columns for reference
+Customer_Account_Output_Data_addedFields = Customer_Account_Output_Data.groupBy("customerId", "forename", "surname").agg(
     collect_list("accountId").alias("accounts"),
     count("accountId").alias("numberAccounts"),
     sum("balance").alias("totalBalance"),
     avg("balance").alias("averageBalance")
 )
 # print tables - QUESTION 1 TABLE
-Customer_Account_Output_Data.show()
+Customer_Account_Output_Data_addedFields.show()
 
 # Save DataFrame as Parquet file
-# Customer_Account_Output_Data.write.parquet("Spark_Exam/data")
+# Customer_Account_Output_Data_addedFields.write.parquet("Spark_Exam/data")
 
 
-#QUESTION 2 
 
 # Read the Parquet file from 
 parquet_df = spark.read.parquet("Spark_Exam/data/output.parquet/part-00000-164e172d-36bd-4763-a1e2-f73c00e04c02-c000.snappy.parquet")
 
 # Read address data from CSV - ADDRESS DATA
-df_address_data = spark.read.option("header", "true").option("inferSchema", "true") \
+df_address_data = spark.read.option("header", "true").option("inferSchema", "false") \
     .csv("Spark_Exam/data/address_data.txt") 
 
 # Performing a join between parquet_df and df_address_data in the customerId column
@@ -130,10 +130,11 @@ for row in address_joined_parquet_df.collect():
     accounts = row.accounts
     address = row.address  
 
-    # Calling the "parsed_address" function the extract the data parsed address 
+
+    # Calling the "parse_address" function to extract data from the column 'address'
     parsed_address = parse_address(address)
 
-    # The code is creating CustomerAccount objects by iterating over the rows in the DataFrame, extracting the column values
+    # Creating CustomerAccount objects by iterating over the rows in the DataFrame, extracting the column values
     customer_account = CustomerAccount(
         customerId=customerId,
         forename=forename,
@@ -151,7 +152,7 @@ for row in address_joined_parquet_df.collect():
 
 
 # Creates a Spark DataFrame from the list "customerAccounts"
-Customer_Account_Output_Data = spark.createDataFrame(customerAccounts)
+Customer_Account_Objects = spark.createDataFrame(customerAccounts)
 
 # Defines the column order
 column_order = [
@@ -165,12 +166,12 @@ column_order = [
     "country"
     ]
                                 
-# Select columns in the desired order
-Customer_Account_Output_Data = Customer_Account_Output_Data.select(*column_order)
+# Select columns in the desired order through "column_order"
+Customer_Account_Parsed_Address = Customer_Account_Objects.select(*column_order)
                                 
 
 # Show the DataFrame.   truncate=False: displays data at full length.
-Customer_Account_Output_Data.show(truncate=False)
+Customer_Account_Parsed_Address.show(truncate=False)
 
-#prints all lines data
-#Customer_Account_Output_Data.show(Customer_Account_Output_Data.count(), truncate=False)
+#prints all lines of data
+#Customer_Account_Parsed_Address.show(Customer_Account_Parsed_Address.count(), truncate=False)
